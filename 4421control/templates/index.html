@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block body %}
+<table class="table table-striped table-hover table-bordered" style="width: 100%">
+<tr>
+    <th>Target</th>
+    <th>Control</th>   
+    <th>Status</th>
+</tr>
+{% for target,info in targets.items() %}
+    <tr>
+        <td><a href="/target/{{ target }}">{{ target }}</td>
+        <td>
+        {%for state in info['states']|sort %}
+           <a href="/control/{{ target }}/{{state}}"><button type="button" class="btn btn-primary">{{ state }}</button></a>
+        {% endfor %}</td>
+        <td>{{ target['status'] }}</td>
+        <!-- <td><a data-toggle="tooltip" title="{{ target['seen_ago'] }}"><img src="/static/images/{{ target['status'] }}.png"></a></td> -->
+    </tr>
+{% endfor %}
+</table>
+
+{% endblock body %}
