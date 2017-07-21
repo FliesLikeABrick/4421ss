@@ -17,6 +17,11 @@ app = Flask(__name__)
 def menu():
 
     return render_template("index.html",targets=getScripts())
+
+# Update target to desired state
+# Returns 404 if the target does not exist
+# Returns 400 if the desired state does not exist
+# Returns default 404 if no state or target is specified in URL
 @app.route("/control/<target>/<state>")
 def control(target,state):
     scripts = getScripts()
@@ -37,9 +42,11 @@ def control(target,state):
         command['output'] = subprocess.check_output(SCRIPTDIR+command['script'],shell=True).decode("utf-8")
     except Exception as e:
         command['output'] = 'Exception encountered during script execution: ' + str(e)
+    # Fire off syslog for this state change
     syslog.syslog(command.__str__())
     return render_template("control.html",commands = [ command ])
 
+# Ideally this would be cached, but currently doesn't hurt performance (at least with low number of scripts)
 def getScripts():
     scripts = [scriptname.split(os.sep)[-1] for scriptname in glob.glob(SCRIPTDIR+'*-*.py') ]
     scriptDirectory = {}
@@ -49,6 +56,8 @@ def getScripts():
             if target in scriptDirectory:
                 scriptDirectory[target]['states'].append(state)
             else:
+                # Status is N/A because another set of scripts needs to be added for querying states of targets
+                # but this starts laying some groundwork
                 scriptDirectory[target] = {'states':[state],'status':'N/A'}
         except Exception as e:
             sys.stderr.write("Failed to parse script %s"% script)
