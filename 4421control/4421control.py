@@ -6,6 +6,7 @@ import glob
 import traceback
 import syslog
 import yaml
+import re
 
 app = Flask(__name__)
 
@@ -44,21 +45,16 @@ def control(target,state):
 
 # Ideally this would be cached, but currently doesn't hurt performance (at least with low number of scripts)
 def getScripts():
-    scripts = [scriptname.split(os.sep)[-1] for scriptname in glob.glob(_CFG['scripts']['directory']+'*-*.py') ]
+    scripts = [scriptname.split(os.sep)[-1] for scriptname in glob.glob(_CFG['scripts']['directory']+_CFG['scripts']['glob']) ]
     scriptDirectory = {}
     for script in scripts:
-        try:
-            target, state = script.split('.')[0].split('-')
-            if target in scriptDirectory:
-                scriptDirectory[target]['states'].append(state)
-            else:
-                # Status is N/A because another set of scripts needs to be added for querying states of targets
-                # but this starts laying some groundwork
-                scriptDirectory[target] = {'states':[state],'status':'N/A'}
-        except Exception as e:
-            sys.stderr.write("Failed to parse script %s"% script)
-            traceback.print_exc(file=sys.stderr)
-            continue
+        matches = _CFG['scripts']['regex'].match(script)
+        if matches.group('target') in scriptDirectory:
+            scriptDirectory[matches.group('target')]['states'].append(matches.group('state'))
+        else:
+            # Status is N/A because another set of scripts needs to be added for querying states of targets
+            # but this starts laying some groundwork
+            scriptDirectory[matches.group('target')] = {'name':matches.group(0),'states':[matches.group('state')],'status':'N/A'}
     return scriptDirectory
 def log(entry):
     """ Handle logging to syslog and files """
@@ -92,17 +88,26 @@ def loadConfig(ucf,dcf):
 
     return cfg
 def initialize():
+
+    ##### Scripts Config #####
     # directory containing state and status scripts
     # os.path.join is used to add the trailing OS path separator if it is not already present in the config
     _CFG['scripts']['directory'] = os.path.join(os.path.expanduser(_CFG['scripts']['directory']), '')
     if not os.path.isdir(_CFG['scripts']['directory']):
         sys.stderr.write("Scripts directory %s does not exist or is not a directory\n" % _CFG['scripts']['directory'])
-        sys.exit(1)
+        sys.exit(2)
+    try:
+        _CFG['scripts']['regex'] = re.compile(_CFG['scripts']['pattern'])
+    except Exception as e:
+        sys.stderr.write("Could not compile script pattern %s\n%s\n" % (_CFG['scripts']['pattern'],str(e)))
+        sys.exit(2)
 
+    ##### Logging Config #####
     # set up syslog, if enabled
     if _CFG['syslog']['enable']:
         if 'ident' in _CFG['syslog']:
             syslog.openlog(ident=_CFG['syslog']['ident'])
+
 
 if __name__ == "__main__":
     # ideally take this filename as a default, and override with a command line option
@@ -110,5 +115,8 @@ if __name__ == "__main__":
     defaultCfgFile=os.path.dirname(os.path.realpath(__file__)) + os.sep + "4421control.cfg.defaults.yaml"
     _CFG = loadConfig(cfgFile,defaultCfgFile)
     initialize()
+    # exit status codes:
+    # 1 - config issue
+    # 2 - initialization issue
     app.run(host='::',debug=True)
 
