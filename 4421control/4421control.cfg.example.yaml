@@ -1,6 +1,6 @@
 scripts:
-    # location of action, status, etc scripts
-    directory: "~/bin"
+    # location of action, status, etc scripts; with trailing /
+    directory: "bin/"
     # glob to use for identifying potential scripts in the configured directory
     # Useful for if the scripts directory contains files that 4421control should not even consider
     # e.g. for script files with extensions only: *-*.*
@@ -11,7 +11,14 @@ scripts:
     # Uses named groups "target" and "state", and optional "type" (not currently used)
     pattern: "(?P<target>[a-zA-Z0-9]+)-(?P<state>[a-zA-Z0-9]+).?(?P<type>[a-zA-Z0-9]*)"
     # optional explicit configuration file for adding script names or descriptions
+    # Default: no description text
     info:
         hvac1dummy-run.py:
             description: "Start HVAC for the first floor"
-
+syslog:
+    # enable or disable syslog
+    # Default: False
+    enable: True
+    # ident to use for syslog
+    # Default: script name, i.e. '4421control.py'
+    ident: "4421control.py"
