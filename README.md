@@ -13,9 +13,10 @@ Support is planned for additional scripts which can be hooked to detect the curr
 
 Note: This is currently written with the expectation that it is run behind a reverse proxy or under a webserver which enforces authentication and/or is only used by known, trusted users.  Shell commands are executed with some minimal validation currently.
 
+## Requirements
+- Python3
+- pyYAML
 ### 4421control To-Do
-- Move config to use an unversioned file
-- Move script glob to configuration
 - Status script support
 - Safer handling of shell commands
 - "Are you sure" AJAX validation before executing commands
