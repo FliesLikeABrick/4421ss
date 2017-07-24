@@ -1,0 +1,17 @@
+scripts:
+    # location of action, status, etc scripts
+    directory: "~/bin"
+    # glob to use for identifying potential scripts in the configured directory
+    # Useful for if the scripts directory contains files that 4421control should not even consider
+    # e.g. for script files with extensions only: *-*.*
+    # for only python files: *-*.py
+    # for any files: *
+    glob: "*-*.*"
+    # pattern to derive target names and states from file names
+    # Uses named groups "target" and "state", and optional "type" (not currently used)
+    pattern: "(?P<target>[a-zA-Z0-9]+)-(?P<state>[a-zA-Z0-9]+).?(?P<type>[a-zA-Z0-9]*)"
+    # optional explicit configuration file for adding script names or descriptions
+    info:
+        hvac1dummy-run.py:
+            description: "Start HVAC for the first floor"
+
