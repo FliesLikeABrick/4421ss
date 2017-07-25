@@ -7,11 +7,11 @@
     <th>Control</th>   
     <th>Status</th>
 </tr>
-{% for target,info in targets.items() %}
+{% for target,states in targets.items() %}
     <tr>
         <td><a href="/target/{{ target }}">{{ target }}</td>
         <td>
-        {%for state in info['states']|sort %}
+        {%for state in states.keys() %}
            <a href="/control/{{ target }}/{{state}}"><button type="button" class="btn btn-primary">{{ state }}</button></a>
         {% endfor %}</td>
         <td>{{ target['status'] }}</td>
