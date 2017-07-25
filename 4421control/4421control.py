@@ -18,10 +18,9 @@ import re
 from argparse import ArgumentParser
 
 app = Flask(__name__)
-
 @app.route("/")
 def menu():
-    return render_template("index.html",targets=getScripts(),cfg=_CFG)
+    return render_template("index.html",targets=_TARGETS,cfg=_CFG)
 
 # Update target to desired state
 # Returns 404 if the target does not exist
@@ -29,15 +28,14 @@ def menu():
 # Returns default 404 if no state or target is specified in URL
 @app.route("/control/<target>/<state>")
 def control(target,state):
-    scripts = getScripts()
     command = {'name':"Control %s, to state %s" % (target,state) }
-    command['script'] = "%s-%s.py" % (target,state)
-    if not target in scripts:
+    command['script'] = _TARGETS[target][state]['script']
+    if not target in _TARGETS:
         # target does not exist
-        command['output'] = 'Exception encountered during script execution: target %s does not exist' % target
+        command['output'] = 'Exception encountered during script execution: target %s does not exist\n%s' % (target)
         # (don't syslog invalid requests)
         return render_template("control.html",commands = [ command ],cfg=_CFG), 404
-    if not state in scripts[target]['states']:
+    if not state in _TARGETS[target]:
         # target does not exist
         command['output'] = 'Exception encountered during script execution: target %s does not offer state %s' % (target,state) 
         # (don't syslog invalid requests)
@@ -51,19 +49,25 @@ def control(target,state):
     log(command.__str__())
     return render_template("control.html",commands = [ command ],cfg=_CFG)
 
-# Ideally this would be cached, but currently doesn't hurt performance (at least with low number of scripts)
-def getScripts():
+
+# Index the scripts in the script directory, according to the glob and pattern
+# also load the script's additional info from yaml, and status script location (if any)
+# 'status' scripts are just stored as a special state for now.
+def getTargets():
     scripts = [scriptname.split(os.sep)[-1] for scriptname in glob.glob(_CFG['scripts']['directory']+_CFG['scripts']['glob']) ]
-    scriptDirectory = {}
+    targets = {}
     for script in scripts:
         matches = _CFG['scripts']['regex'].match(script)
-        if matches.group('target') in scriptDirectory:
-            scriptDirectory[matches.group('target')]['states'].append(matches.group('state'))
-        else:
-            # Status is N/A because another set of scripts needs to be added for querying states of targets
-            # but this starts laying some groundwork
-            scriptDirectory[matches.group('target')] = {'name':matches.group(0),'states':[matches.group('state')],'status':'N/A'}
-    return scriptDirectory
+        state = {}
+        state['name'] = matches.group('state') # yaml can override (not implemented)
+        state['info'] = '' # from yaml (not implemented)
+        state['type'] = matches.group('type')
+        state['script'] = matches.group(0)
+        if matches.group('target') not in targets:
+            targets[matches.group('target')] = {}
+        targets[matches.group('target')][matches.group('state')] = state
+    # sort the scripts and states by name now to avoid doing it repeatedly later
+    return targets
 def log(entry):
     """ Handle logging to syslog and files """
     if _CFG['syslog']['enable']:
@@ -102,7 +106,6 @@ def loadConfig(ucf,dcf):
             cfg[section].update(userCfg[section])
         else:
             cfg[section] = userCfg[section]
-
     return cfg
 def initialize():
 
@@ -122,7 +125,7 @@ def initialize():
     ##### Logging Config #####
     # set up syslog, if enabled
     if _CFG['syslog']['enable']:
-        if 'ident' in _CFG['syslog']:
+        if _CFG['syslog']['ident']:
             syslog.openlog(ident=_CFG['syslog']['ident'])
 
 
@@ -140,6 +143,7 @@ if __name__ == "__main__":
 
     _CFG = loadConfig(args.config,args.defaultconfig)
     initialize()
+    _TARGETS = getTargets()
     # exit status codes:
     # 1 - config issue
     # 2 - initialization issue
