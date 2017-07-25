@@ -129,9 +129,9 @@ def initialize():
 if __name__ == "__main__":
     # ideally take this filename as a default, and override with a command line option
     parser = ArgumentParser(description='UI and API server for 4421control: https://github.com/FliesLikeABrick/4421ss/')
-    parser.add_argument('--defaults', action='store_true')
-    parser.add_argument('--config', default=os.path.dirname(os.path.realpath(__file__)) + os.sep + "4421control.cfg.yaml")
-    parser.add_argument('--defaultconfig', default=os.path.dirname(os.path.realpath(__file__)) + os.sep + "4421control.cfg.defaults.yaml")
+    parser.add_argument('--defaults', action='store_true',help='Ignore configuration file.  Default: False')
+    parser.add_argument('--config', default=os.path.dirname(os.path.realpath(__file__)) + os.sep + "4421control.cfg.yaml",help="Configuration file location.  Default: 4421control.cfg.yaml")
+    parser.add_argument('--defaultconfig', default=os.path.dirname(os.path.realpath(__file__)) + os.sep + "4421control.cfg.defaults.yaml",help="Configuration defaults file location.  Default: 4421control.cfg.defaults.yaml.  Normal users should never change this.")
     args = parser.parse_args()
 
     if args.defaults:
