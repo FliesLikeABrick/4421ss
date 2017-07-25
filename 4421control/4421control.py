@@ -74,7 +74,7 @@ def loadConfig(ucf,dcf):
         with open(dcf) as yf:
             cfg = yaml.load(yf.read())
     except Exception as e:
-        sys.stderr.write("Failed to load defaults configuration file %s\n%s\n" % (dcf,str(e)))
+        sys.stderr.write("Failed to load configuration defaults from file %s\n%s\n" % (dcf,str(e)))
         sys.exit(1)
 
     # If no user config file is specified, return the defaults.
@@ -133,9 +133,9 @@ if __name__ == "__main__":
     parser.add_argument('--config', default=os.path.dirname(os.path.realpath(__file__)) + os.sep + "4421control.cfg.yaml")
     parser.add_argument('--defaultconfig', default=os.path.dirname(os.path.realpath(__file__)) + os.sep + "4421control.cfg.defaults.yaml")
     args = parser.parse_args()
-    print(args.defaults)
+
     if args.defaults:
-        sys.stderr.write("--defaults specified, running with default configuration.")
+        sys.stderr.write("--defaults specified, running with default configuration.\n")
         cfgFile = None
 
     _CFG = loadConfig(args.config,args.defaultconfig)
