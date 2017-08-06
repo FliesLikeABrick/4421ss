@@ -7,14 +7,16 @@
     <th>Control</th>   
     <th>Status</th>
 </tr>
-{% for target,states in targets.items() %}
+{% for target in targets.keys()|sort %}
     <tr>
         <td><a href="/target/{{ target }}">{{ target }}</td>
         <td>
-        {%for state in states.keys() %}
-           <a href="/control/{{ target }}/{{state}}"><button type="button" class="btn btn-primary">{{ state }}</button></a>
+        {% for state in targets[target]['states'].keys()|sort %}
+            {% if state != 'status' %}
+                <a href="/control/{{ target }}/{{state}}"><button type="button" class="btn btn-primary">{{ state }}</button></a>
+                {% endif %}
         {% endfor %}</td>
-        <td>{{ target['status'] }}</td>
+        <td>{{ targets[target]['status'] }}</td>
         <!-- <td><a data-toggle="tooltip" title="{{ target['seen_ago'] }}"><img src="/static/images/{{ target['status'] }}.png"></a></td> -->
     </tr>
 {% endfor %}

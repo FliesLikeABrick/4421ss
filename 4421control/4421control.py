@@ -16,10 +16,15 @@ import syslog
 import yaml
 import re
 from argparse import ArgumentParser
+from pprint import PrettyPrinter
 
+pp = PrettyPrinter()
 app = Flask(__name__)
 @app.route("/")
 def menu():
+    pp.pprint(_TARGETS)
+    updateStatus()
+    pp.pprint(_TARGETS)
     return render_template("index.html",targets=_TARGETS,cfg=_CFG)
 
 # Update target to desired state
@@ -29,13 +34,13 @@ def menu():
 @app.route("/control/<target>/<state>")
 def control(target,state):
     command = {'name':"Control %s, to state %s" % (target,state) }
-    command['script'] = _TARGETS[target][state]['script']
+    command['script'] = _TARGETS[target]['states'][state]['script']
     if not target in _TARGETS:
         # target does not exist
         command['output'] = 'Exception encountered during script execution: target %s does not exist\n%s' % (target)
         # (don't syslog invalid requests)
         return render_template("control.html",commands = [ command ],cfg=_CFG), 404
-    if not state in _TARGETS[target]:
+    if not state in _TARGETS[target]['states']:
         # target does not exist
         command['output'] = 'Exception encountered during script execution: target %s does not offer state %s' % (target,state) 
         # (don't syslog invalid requests)
@@ -64,10 +69,16 @@ def getTargets():
         state['type'] = matches.group('type')
         state['script'] = matches.group(0)
         if matches.group('target') not in targets:
-            targets[matches.group('target')] = {}
-        targets[matches.group('target')][matches.group('state')] = state
+            targets[matches.group('target')]={'states':{}}
+        targets[matches.group('target')]['states'][matches.group('state')] = state
     # sort the scripts and states by name now to avoid doing it repeatedly later
     return targets
+def updateStatus():
+    # update status of all entries in _TARGETS that have a status script
+    for target,targetinfo in _TARGETS.items():
+        pp.pprint(targetinfo)
+        if 'status' in targetinfo['states']:
+            _TARGETS[target]['status'] = subprocess.check_output(_CFG['scripts']['directory']+targetinfo['states']['status']['script'],shell=True).decode("utf-8").strip()
 def log(entry):
     """ Handle logging to syslog and files """
     if _CFG['syslog']['enable']:
