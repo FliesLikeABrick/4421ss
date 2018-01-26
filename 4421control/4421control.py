@@ -62,6 +62,7 @@ def getTargets():
     scripts = [scriptname.split(os.sep)[-1] for scriptname in glob.glob(_CFG['scripts']['directory']+_CFG['scripts']['glob']) ]
     targets = {}
     for script in scripts:
+        print(script)
         matches = _CFG['scripts']['regex'].match(script)
         state = {}
         state['name'] = matches.group('state') # yaml can override (not implemented)
@@ -76,9 +77,16 @@ def getTargets():
 def updateStatus():
     # update status of all entries in _TARGETS that have a status script
     for target,targetinfo in _TARGETS.items():
-        pp.pprint(targetinfo)
         if 'status' in targetinfo['states']:
             _TARGETS[target]['status'] = subprocess.check_output(_CFG['scripts']['directory']+targetinfo['states']['status']['script'],shell=True).decode("utf-8").strip()
+            images = [imagename.split(os.sep)[-1] for imagename in glob.glob('static/img/status/{}-{}*'.format(target,_TARGETS[target]['status']))]
+            if images:
+                alt = _TARGETS[target]['status']
+                title = 'Status script {} reports status: {}'.format(targetinfo['states']['status']['script'],_TARGETS[target]['status'])
+                _TARGETS[target]['status'] = '<img src="static/img/status/{}" alt="{}" title="{}"  style="max-height:40px;max-width:40px"/>'.format(images[0],alt,title)
+            print(images)
+        else:
+            _TARGETS[target]['status'] = '<img src="static/img/status/unknown.png" alt="N/A" title="N/A, no status script" style="max-height:40px;max-width:40px"/>'
 def log(entry):
     """ Handle logging to syslog and files """
     if _CFG['syslog']['enable']:

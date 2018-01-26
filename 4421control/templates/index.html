@@ -16,7 +16,7 @@
                 <a href="/control/{{ target }}/{{state}}"><button type="button" class="btn btn-primary">{{ state }}</button></a>
                 {% endif %}
         {% endfor %}</td>
-        <td>{{ targets[target]['status'] }}</td>
+        <td align="center">{{ targets[target]['status']|safe }}</td>
         <!-- <td><a data-toggle="tooltip" title="{{ target['seen_ago'] }}"><img src="/static/images/{{ target['status'] }}.png"></a></td> -->
     </tr>
 {% endfor %}
